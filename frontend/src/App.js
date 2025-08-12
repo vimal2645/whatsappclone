@@ -7,8 +7,8 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [msgText, setMsgText] = useState('');
 
-  // 🔹 Directly set your backend URL here
-  const API_URL = 'http://localhost:5000'; // change to your Render URL when deployed
+  // ✅ Will use Render URL in production, localhost in dev
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Load conversations and auto-select first chat
   useEffect(() => {
@@ -122,3 +122,4 @@ function App() {
 }
 
 export default App;
+
