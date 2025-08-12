@@ -8,7 +8,7 @@ function App() {
   const [msgText, setMsgText] = useState('');
 
   // 🔹 Direct backend API URL
-  const API_URL = 'http://localhost:5000'; // change to Render URL after deployment
+  const API_URL = 'https://whatsappclone-m9f6.onrender.com/'; // change to Render URL after deployment
 
   // Load conversations and auto-select first chat
   useEffect(() => {
