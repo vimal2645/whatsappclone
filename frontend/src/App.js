@@ -1,120 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import "./App.css";
 
 function App() {
-  const [convos, setConvos] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [msgText, setMsgText] = useState('');
+  const [conversations, setConversations] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
 
-  // ✅ Use environment variable in production, localhost in dev
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-  // Load conversations and auto-select first chat
   useEffect(() => {
-    axios
-      .get(`${API_URL}/api/conversations`) // ✅ Added /api
-      .then(res => {
-        setConvos(res.data);
-        if (res.data.length > 0) {
-          setSelected(res.data[0]); // auto-select first chat
-        }
-      })
-      .catch(err => console.error('Error fetching conversations:', err));
-  }, [API_URL]);
-
-  // Send a new message
-  const sendMsg = async () => {
-    if (!msgText.trim() || !selected) return;
-
-    const newMsg = {
-      id: Date.now().toString(),
-      wa_id: selected.wa_id,
-      name: selected.name,
-      text: msgText,
-      timestamp: new Date(),
-      fromMe: true,
-      status: 'sent'
-    };
-
-    try {
-      await axios.post(`${API_URL}/api/messages`, newMsg); // ✅ Added /api
-
-      // Update UI instantly
-      setConvos(prev =>
-        prev.map(c =>
-          c.wa_id === selected.wa_id
-            ? { ...c, messages: [...c.messages, newMsg] }
-            : c
-        )
-      );
-
-      // Update selected chat in view
-      setSelected(prev => ({
-        ...prev,
-        messages: [...prev.messages, newMsg]
-      }));
-
-      setMsgText('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
+    fetch("/api/conversations")
+      .then((res) => res.json())
+      .then((data) => setConversations(data))
+      .catch((err) => console.error(err));
+  }, []);
 
   return (
-    <div className="app">
-      {/* Sidebar */}
-      <div className={`sidebar ${selected ? 'hide-mobile' : ''}`}>
-        {convos.map(c => (
+    <div className="app-container">
+      {/* Chat List */}
+      <div className={`chat-list ${selectedChat ? "hide-on-mobile" : ""}`}>
+        <h2>Chats</h2>
+        {conversations.map((chat) => (
           <div
-            key={c.wa_id}
-            onClick={() => setSelected(c)}
+            key={chat.wa_id}
             className="chat-item"
+            onClick={() => setSelectedChat(chat)}
           >
-            <strong>{c.name || c.wa_id}</strong>
-            <p>{c.messages[c.messages.length - 1]?.text || ''}</p>
+            <strong>{chat.name || "Unknown"}</strong>
+            <p>
+              {chat.messages[chat.messages.length - 1]?.text || "No messages"}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Chat Area */}
-      <div className={`chat-area ${!selected ? 'hide-mobile' : ''}`}>
-        {selected ? (
+      {/* Chat Window */}
+      <div className={`chat-window ${!selectedChat ? "hide-on-mobile" : ""}`}>
+        {selectedChat ? (
           <>
-            {/* Chat Messages */}
+            <div className="chat-header">
+              <button
+                className="back-button"
+                onClick={() => setSelectedChat(null)}
+              >
+                ← Back
+              </button>
+              <h3>{selectedChat.name}</h3>
+            </div>
             <div className="messages">
-              {selected.messages.map((m, idx) => (
+              {selectedChat.messages.map((msg, index) => (
                 <div
-                  key={idx}
-                  className={`message ${m.fromMe ? 'sent' : 'received'}`}
+                  key={index}
+                  className={`message ${
+                    msg.from_me ? "from-me" : "from-them"
+                  }`}
                 >
-                  <div className="bubble">
-                    {m.text}
-                    <div className="meta">
-                      {new Date(m.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}{' '}
-                      - {m.status}
-                    </div>
-                  </div>
+                  {msg.text}
                 </div>
               ))}
             </div>
-
-            {/* Input Box */}
-            <div className="input-box">
-              <input
-                value={msgText}
-                onChange={e => setMsgText(e.target.value)}
-                placeholder="Type a message"
-                onKeyDown={e => e.key === 'Enter' && sendMsg()}
-              />
-              <button onClick={sendMsg}>Send</button>
-            </div>
           </>
         ) : (
-          <div className="no-chat">Select a chat</div>
+          <p className="no-chat">Select a chat to start messaging</p>
         )}
       </div>
     </div>
