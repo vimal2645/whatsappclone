@@ -4,26 +4,23 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-// Import Mongoose model
+// Mongoose model
 const Message = require('./models/Message');
 
-// Initialize express app
 const app = express();
 
-// ===== MIDDLEWARE =====
+// ===== Middlewares =====
 app.use(express.json());
-
-// CORS setup — allow both local development and deployed frontend
 app.use(cors({
   origin: [
-    'http://localhost:3000',                         // local dev
-    'https://your-frontend.vercel.app'               // deployed frontend
+    'http://localhost:3000',                     // Local frontend dev
+    'https://whatsappclone-ashen.vercel.app/'           // Replace with your actual deployed frontend URL
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 
-// ===== DATABASE CONNECTION =====
+// ===== Database =====
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -31,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.error('❌ MongoDB Error:', err));
 
-// ===== ROUTES =====
+// ===== API Routes =====
 
 // Get all conversations grouped by wa_id
 app.get('/api/conversations', async (req, res) => {
@@ -70,16 +67,17 @@ app.put('/api/messages/status', async (req, res) => {
   }
 });
 
-// ===== OPTIONAL: Serve frontend if using combined deployment =====
+// ===== Optional: Serve frontend build in production =====
 if (process.env.NODE_ENV === 'production') {
   const frontendPath = path.join(__dirname, '../frontend/build');
   app.use(express.static(frontendPath));
 
-  app.get('*', (req, res) => {
+  // ✅ Express 5 wildcard syntax: give * a param name (*splat)
+  app.get('/*splat', (req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
   });
 }
 
-// ===== START SERVER =====
+// ===== Start Server =====
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
