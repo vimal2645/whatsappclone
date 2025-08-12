@@ -1,0 +1,20 @@
+# Ignore node_modules folders everywhere
+node_modules/
+
+# Ignore environment files
+.env
+backend/.env
+frontend/.env
+
+# Build output
+frontend/build/
+
+# Logs
+logs/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
