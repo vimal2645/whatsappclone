@@ -7,13 +7,13 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [msgText, setMsgText] = useState('');
 
-  // ✅ Will use Render URL in production, localhost in dev
+  // ✅ Use environment variable in production, localhost in dev
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Load conversations and auto-select first chat
   useEffect(() => {
     axios
-      .get(`${API_URL}/conversations`)
+      .get(`${API_URL}/api/conversations`) // ✅ Added /api
       .then(res => {
         setConvos(res.data);
         if (res.data.length > 0) {
@@ -21,7 +21,7 @@ function App() {
         }
       })
       .catch(err => console.error('Error fetching conversations:', err));
-  }, []);
+  }, [API_URL]);
 
   // Send a new message
   const sendMsg = async () => {
@@ -38,7 +38,7 @@ function App() {
     };
 
     try {
-      await axios.post(`${API_URL}/messages`, newMsg);
+      await axios.post(`${API_URL}/api/messages`, newMsg); // ✅ Added /api
 
       // Update UI instantly
       setConvos(prev =>
@@ -122,4 +122,3 @@ function App() {
 }
 
 export default App;
-
