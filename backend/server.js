@@ -8,11 +8,10 @@ const Message = require('./models/Message');
 
 const app = express();
 
-// ===== Middlewares =====
-app.use(cors()); // Add { origin: [...] } for more security in production
+app.use(cors());
 app.use(express.json());
 
-// ===== API Routes =====
+// API routes prefixed with /api
 app.get('/api/conversations', async (req, res) => {
   try {
     const msgs = await Message.find().sort({ timestamp: 1 });
@@ -47,16 +46,16 @@ app.put('/api/messages/status', async (req, res) => {
   }
 });
 
-// ===== Serve React Frontend =====
+// Serve React frontend build folder
 const buildPath = path.join(__dirname, 'frontend/build');
 app.use(express.static(buildPath));
 
-// For Express 5+ use '/*splat', for Express 4 use '*'
+// Catch-all route to serve React's index.html (fixes 'Cannot GET /' on deployment)
 app.get('/*splat', (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
-// ===== Database & Server Start =====
+// Start server after DB connection
 const PORT = process.env.PORT || 5000;
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
@@ -65,5 +64,4 @@ mongoose.connect(process.env.MONGO_URI)
   })
   .catch(err => {
     console.error('❌ MongoDB Connection Error:', err);
-    process.exit(1);
   });
