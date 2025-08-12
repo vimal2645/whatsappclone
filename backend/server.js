@@ -4,36 +4,32 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-// Mongoose Model
 const Message = require('./models/Message');
-
-// Payload processing function
-const processPayload = require('./processPayloads');
 
 const app = express();
 
-// ===== MIDDLEWARES =====
+// Middleware: Enable CORS, parse JSON
+app.use(cors());  // You can restrict origins by passing options if needed
 app.use(express.json());
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://whatsappclone-ashen.vercel.app'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
 
-// ===== DATABASE =====
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('✅ MongoDB Connected'))
-.catch(err => console.error('❌ MongoDB Error:', err));
+// Connect to MongoDB (await connection before listening)
+const mongoUri = process.env.MONGO_URI;
 
-// ===== API ROUTES =====
+mongoose.connect(mongoUri)
+  .then(() => {
+    console.log('✅ MongoDB Connected');
 
-// 1️⃣ List conversations (grouped by wa_id)
+    // Start the server only after DB connection is ready
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ MongoDB Connection Error:', err);
+  });
+
+// API routes all prefixed by /api to prevent collision with React routes
 app.get('/api/conversations', async (req, res) => {
   try {
     const msgs = await Message.find().sort({ timestamp: 1 });
@@ -50,7 +46,6 @@ app.get('/api/conversations', async (req, res) => {
   }
 });
 
-// 2️⃣ Manual message add (for testing)
 app.post('/api/messages', async (req, res) => {
   try {
     await new Message(req.body).save();
@@ -60,46 +55,20 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
-// 3️⃣ Update message status
 app.put('/api/messages/status', async (req, res) => {
   try {
-    await Message.findOneAndUpdate(
-      { id: req.body.id },
-      { status: req.body.status }
-    );
+    await Message.findOneAndUpdate({ id: req.body.id }, { status: req.body.status });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 4️⃣ Webhook endpoint — uses processPayload.js
-app.post('/api/webhook', async (req, res) => {
-  try {
-    console.log('📩 Incoming Webhook Payload:', JSON.stringify(req.body, null, 2));
-    await processPayload(req.body); // This should save messages into MongoDB
-    res.status(200).send('EVENT_RECEIVED');
-  } catch (err) {
-    console.error('❌ Webhook processing error:', err);
-    res.status(500).json({ error: err.message });
-  }
+// Serve React static files from frontend/build
+const buildPath = path.join(__dirname, 'frontend/build');
+app.use(express.static(buildPath));
+
+// Catch-all: send React index.html for any request that doesn't match above routes (to support client-side routing)
+app.get('/*splat', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
-
-// Optional GET webhook verification (if needed by provider)
-app.get('/api/webhook', (req, res) => {
-  const verify_token = process.env.VERIFY_TOKEN;
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-
-  if (mode && token && mode === 'subscribe' && token === verify_token) {
-    console.log('✅ Webhook verified');
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
-  }
-});
-
-// ===== START SERVER =====
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

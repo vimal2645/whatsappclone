@@ -7,8 +7,8 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [msgText, setMsgText] = useState('');
 
-  // 🔹 Direct backend API URL
-  const API_URL = 'https://whatsappclone-m9f6.onrender.com/'; // change to Render URL after deployment
+  // 🔹 Directly set your backend URL here
+  const API_URL = 'http://localhost:5000'; // change to your Render URL when deployed
 
   // Load conversations and auto-select first chat
   useEffect(() => {
@@ -16,9 +16,8 @@ function App() {
       .get(`${API_URL}/conversations`)
       .then(res => {
         setConvos(res.data);
-        if (window.innerWidth >= 768 && res.data.length > 0) {
-          // Auto-select first chat only on tablet/desktop
-          setSelected(res.data[0]);
+        if (res.data.length > 0) {
+          setSelected(res.data[0]); // auto-select first chat
         }
       })
       .catch(err => console.error('Error fetching conversations:', err));
@@ -41,7 +40,7 @@ function App() {
     try {
       await axios.post(`${API_URL}/messages`, newMsg);
 
-      // Update conversations list
+      // Update UI instantly
       setConvos(prev =>
         prev.map(c =>
           c.wa_id === selected.wa_id
@@ -50,7 +49,7 @@ function App() {
         )
       );
 
-      // Update currently selected chat
+      // Update selected chat in view
       setSelected(prev => ({
         ...prev,
         messages: [...prev.messages, newMsg]
@@ -65,7 +64,7 @@ function App() {
   return (
     <div className="app">
       {/* Sidebar */}
-      <div className={`sidebar ${selected && window.innerWidth < 768 ? 'hide-mobile' : ''}`}>
+      <div className={`sidebar ${selected ? 'hide-mobile' : ''}`}>
         {convos.map(c => (
           <div
             key={c.wa_id}
@@ -82,33 +81,7 @@ function App() {
       <div className={`chat-area ${!selected ? 'hide-mobile' : ''}`}>
         {selected ? (
           <>
-            {/* Chat Header with 'Back' button for mobile */}
-            <div className="chat-header" style={{
-              padding: '10px',
-              background: '#075e54',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              {window.innerWidth < 768 && (
-                <button
-                  onClick={() => setSelected(null)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'white',
-                    fontSize: '1.2rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ←
-                </button>
-              )}
-              <h3 style={{ margin: 0 }}>{selected.name || selected.wa_id}</h3>
-            </div>
-
-            {/* Messages */}
+            {/* Chat Messages */}
             <div className="messages">
               {selected.messages.map((m, idx) => (
                 <div
@@ -121,14 +94,15 @@ function App() {
                       {new Date(m.timestamp).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
-                      })} - {m.status}
+                      })}{' '}
+                      - {m.status}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Message Input */}
+            {/* Input Box */}
             <div className="input-box">
               <input
                 value={msgText}

@@ -1,13 +1,14 @@
+// backend/models/Message.js
 const mongoose = require('mongoose');
 
-const messageSchema = new mongoose.Schema({
-  id: String,
-  wa_id: String,
-  name: String,
-  text: String,
-  timestamp: Date,
-  fromMe: Boolean,
-  status: String
+const MessageSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  wa_id: { type: String, required: true },
+  name: { type: String },
+  text: { type: String },
+  timestamp: { type: Date },
+  fromMe: { type: Boolean, default: false },
+  status: { type: String, default: 'sent' }
 });
 
-module.exports = mongoose.model('Message', messageSchema);
+module.exports = mongoose.model('Message', MessageSchema);
