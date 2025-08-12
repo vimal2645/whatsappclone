@@ -8,28 +8,11 @@ const Message = require('./models/Message');
 
 const app = express();
 
-// Middleware: Enable CORS, parse JSON
-app.use(cors());  // You can restrict origins by passing options if needed
+// ===== Middlewares =====
+app.use(cors()); // Add { origin: [...] } for more security in production
 app.use(express.json());
 
-// Connect to MongoDB (await connection before listening)
-const mongoUri = process.env.MONGO_URI;
-
-mongoose.connect(mongoUri)
-  .then(() => {
-    console.log('✅ MongoDB Connected');
-
-    // Start the server only after DB connection is ready
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err);
-  });
-
-// API routes all prefixed by /api to prevent collision with React routes
+// ===== API Routes =====
 app.get('/api/conversations', async (req, res) => {
   try {
     const msgs = await Message.find().sort({ timestamp: 1 });
@@ -64,11 +47,23 @@ app.put('/api/messages/status', async (req, res) => {
   }
 });
 
-// Serve React static files from frontend/build
+// ===== Serve React Frontend =====
 const buildPath = path.join(__dirname, 'frontend/build');
 app.use(express.static(buildPath));
 
-// Catch-all: send React index.html for any request that doesn't match above routes (to support client-side routing)
+// For Express 5+ use '/*splat', for Express 4 use '*'
 app.get('/*splat', (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
+
+// ===== Database & Server Start =====
+const PORT = process.env.PORT || 5000;
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB Connected');
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ MongoDB Connection Error:', err);
+    process.exit(1);
+  });
