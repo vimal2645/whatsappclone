@@ -1,90 +1,31 @@
-.app-container {
-  display: flex;
-  height: 100vh;
-  font-family: Arial, sans-serif;
+/* Hide elements on mobile when toggled */
+.hide-mobile {
+  display: none;
 }
 
-.chat-list {
-  width: 30%;
-  border-right: 1px solid #ccc;
-  overflow-y: auto;
-}
-
-.chat-item {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
-}
-.chat-item:hover {
-  background: #f9f9f9;
-}
-
-.chat-window {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
+/* Chat Header */
 .chat-header {
   display: flex;
   align-items: center;
   padding: 10px;
-  background: #075e54;
-  color: white;
+  background: #f1f1f1;
+  border-bottom: 1px solid #ddd;
 }
 
-.back-button {
+.back-btn {
   margin-right: 10px;
-  background: transparent;
+  background: none;
   border: none;
-  color: white;
-  font-size: 16px;
+  font-size: 20px;
   cursor: pointer;
-  display: none; /* hidden on desktop */
 }
 
-.messages {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-}
-
-.message {
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  max-width: 60%;
-}
-
-.from-me {
-  background: #dcf8c6;
-  align-self: flex-end;
-}
-
-.from-them {
-  background: #fff;
-  border: 1px solid #ccc;
-  align-self: flex-start;
-}
-
-.no-chat {
-  padding: 20px;
-  text-align: center;
-  color: gray;
-}
-
-/* Mobile styles */
+/* Mobile adjustments */
 @media (max-width: 768px) {
-  .chat-list {
+  .sidebar {
     width: 100%;
   }
-  .chat-window {
+  .chat-area {
     width: 100%;
-  }
-  .hide-on-mobile {
-    display: none;
-  }
-  .back-button {
-    display: inline-block;
   }
 }
