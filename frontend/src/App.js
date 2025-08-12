@@ -1,4 +1,4 @@
-/import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -6,30 +6,22 @@ function App() {
   const [convos, setConvos] = useState([]);
   const [selected, setSelected] = useState(null);
   const [msgText, setMsgText] = useState('');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // ✅ Use environment variable in production, localhost in dev
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Load conversations (no auto-select on mobile)
+  // Load conversations and auto-select first chat
   useEffect(() => {
     axios
-      .get(`${API_URL}/api/conversations`)
+      .get(`${API_URL}/api/conversations`) // ✅ Added /api
       .then(res => {
         setConvos(res.data);
-        if (res.data.length > 0 && !isMobile) {
-          setSelected(res.data[0]); // auto-select first chat only on desktop
+        if (res.data.length > 0) {
+          setSelected(res.data[0]); // auto-select first chat
         }
       })
       .catch(err => console.error('Error fetching conversations:', err));
-  }, [API_URL, isMobile]);
+  }, [API_URL]);
 
   // Send a new message
   const sendMsg = async () => {
@@ -46,7 +38,7 @@ function App() {
     };
 
     try {
-      await axios.post(`${API_URL}/api/messages`, newMsg);
+      await axios.post(`${API_URL}/api/messages`, newMsg); // ✅ Added /api
 
       // Update UI instantly
       setConvos(prev =>
@@ -69,19 +61,15 @@ function App() {
     }
   };
 
-  // Back to chat list
-  const goBack = () => setSelected(null);
-
   return (
     <div className="app">
       {/* Sidebar */}
-      <div className={`sidebar ${selected && isMobile ? 'hide-mobile' : ''}`}>
-        <h2 className="sidebar-title">Chats</h2>
+      <div className={`sidebar ${selected ? 'hide-mobile' : ''}`}>
         {convos.map(c => (
           <div
             key={c.wa_id}
             onClick={() => setSelected(c)}
-            className={`chat-item ${selected?.wa_id === c.wa_id ? 'active' : ''}`}
+            className="chat-item"
           >
             <strong>{c.name || c.wa_id}</strong>
             <p>{c.messages[c.messages.length - 1]?.text || ''}</p>
@@ -90,19 +78,9 @@ function App() {
       </div>
 
       {/* Chat Area */}
-      <div className={`chat-area ${!selected && isMobile ? 'hide-mobile' : ''}`}>
+      <div className={`chat-area ${!selected ? 'hide-mobile' : ''}`}>
         {selected ? (
           <>
-            {/* Chat Header with Back Button */}
-            <div className="chat-header">
-              {isMobile && (
-                <button className="back-btn" onClick={goBack}>
-                  ←
-                </button>
-              )}
-              <h3>{selected.name || selected.wa_id}</h3>
-            </div>
-
             {/* Chat Messages */}
             <div className="messages">
               {selected.messages.map((m, idx) => (
