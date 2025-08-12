@@ -1,4 +1,3 @@
-const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -8,10 +7,14 @@ const Message = require('./models/Message');
 
 const app = express();
 
-app.use(cors());
+// ✅ Allow only your Vercel frontend
+app.use(cors({
+  origin: ["https://whatsappclone-rouge.vercel.app"],
+  credentials: true
+}));
 app.use(express.json());
 
-// API routes prefixed with /api
+// API routes
 app.get('/api/conversations', async (req, res) => {
   try {
     const msgs = await Message.find().sort({ timestamp: 1 });
@@ -46,16 +49,6 @@ app.put('/api/messages/status', async (req, res) => {
   }
 });
 
-// Serve React frontend build folder
-const buildPath = path.join(__dirname, 'frontend/build');
-app.use(express.static(buildPath));
-
-// Catch-all route to serve React's index.html (fixes 'Cannot GET /' on deployment)
-app.get('/*splat', (req, res) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
-});
-
-// Start server after DB connection
 const PORT = process.env.PORT || 5000;
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
