@@ -4,23 +4,26 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-// Mongoose model
+// Mongoose Model
 const Message = require('./models/Message');
+
+// Payload processing function
+const processPayload = require('./processPayload');
 
 const app = express();
 
-// ===== Middlewares =====
+// ===== MIDDLEWARES =====
 app.use(express.json());
 app.use(cors({
   origin: [
-    'http://localhost:3000',                     // Local frontend dev
-    'https://whatsappclone-ashen.vercel.app/'           // Replace with your actual deployed frontend URL
+    'http://localhost:3000',
+    'https://whatsappclone-ashen.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 
-// ===== Database =====
+// ===== DATABASE =====
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -28,9 +31,9 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.error('❌ MongoDB Error:', err));
 
-// ===== API Routes =====
+// ===== API ROUTES =====
 
-// Get all conversations grouped by wa_id
+// 1️⃣ List conversations (grouped by wa_id)
 app.get('/api/conversations', async (req, res) => {
   try {
     const msgs = await Message.find().sort({ timestamp: 1 });
@@ -47,7 +50,7 @@ app.get('/api/conversations', async (req, res) => {
   }
 });
 
-// Add a new message
+// 2️⃣ Manual message add (for testing)
 app.post('/api/messages', async (req, res) => {
   try {
     await new Message(req.body).save();
@@ -57,27 +60,46 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
-// Update message status
+// 3️⃣ Update message status
 app.put('/api/messages/status', async (req, res) => {
   try {
-    await Message.findOneAndUpdate({ id: req.body.id }, { status: req.body.status });
+    await Message.findOneAndUpdate(
+      { id: req.body.id },
+      { status: req.body.status }
+    );
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ===== Optional: Serve frontend build in production =====
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '../frontend/build');
-  app.use(express.static(frontendPath));
+// 4️⃣ Webhook endpoint — uses processPayload.js
+app.post('/api/webhook', async (req, res) => {
+  try {
+    console.log('📩 Incoming Webhook Payload:', JSON.stringify(req.body, null, 2));
+    await processPayload(req.body); // This should save messages into MongoDB
+    res.status(200).send('EVENT_RECEIVED');
+  } catch (err) {
+    console.error('❌ Webhook processing error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  // ✅ Express 5 wildcard syntax: give * a param name (*splat)
-  app.get('/*splat', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  });
-}
+// Optional GET webhook verification (if needed by provider)
+app.get('/api/webhook', (req, res) => {
+  const verify_token = process.env.VERIFY_TOKEN;
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-// ===== Start Server =====
+  if (mode && token && mode === 'subscribe' && token === verify_token) {
+    console.log('✅ Webhook verified');
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
+});
+
+// ===== START SERVER =====
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
