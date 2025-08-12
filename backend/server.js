@@ -8,7 +8,7 @@ require('dotenv').config();
 const Message = require('./models/Message');
 
 // Payload processing function
-const processPayload = require('./processPayload');
+const processPayload = require('./processPayloads');
 
 const app = express();
 
